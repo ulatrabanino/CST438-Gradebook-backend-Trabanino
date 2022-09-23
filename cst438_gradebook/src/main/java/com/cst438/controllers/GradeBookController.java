@@ -1,13 +1,5 @@
 package com.cst438.controllers;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -177,62 +169,5 @@ public class GradeBookController {
 		
 		return assignment;
 	}
-	
-	@PostMapping("/course/{course_id}/assignment")
-    @Transactional
-    public Boolean createAssignment(@RequestBody AssignmentListDTO.AssignmentDTO assignment, @PathVariable int course_id) throws ParseException {
-        System.out.println(course_id);
-        System.out.println("Create assignment for gradebook " + assignment.assignmentName + " " + assignment.dueDate);
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
-        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-//        Date date = formatter.parse(assignment.dueDate);
-        Course course = courseRepository.findById(course_id).orElse(null);
-        Assignment newAssignment = new Assignment();
-        newAssignment.setName(assignment.assignmentName);
-		newAssignment.setDueDate(java.sql.Date.valueOf(assignment.dueDate));
-		newAssignment.setCourse(course);
-        assignmentRepository.save(newAssignment);
-        return true;
-        }
-    @PutMapping("/course/{course_id}/assignment/{id}")
-    @Transactional
-    public AssignmentListDTO.AssignmentDTO updateAssignment(@RequestBody AssignmentListDTO.AssignmentDTO assignment, @PathVariable int id, @PathVariable String course_id) {
-        Assignment currentAssignment = assignmentRepository.findById(id).orElse(null);
-        currentAssignment.setName(assignment.assignmentName);
-        return new AssignmentListDTO.AssignmentDTO(currentAssignment.getId(), currentAssignment.getCourse().getCourse_id(), currentAssignment.getName(), currentAssignment.getDueDate().toString(), currentAssignment.getCourse().getTitle());
-    }
-    
-    @DeleteMapping("/gradebook/{assignment_id}")
-	@Transactional
-	public void deleteAssignment (@PathVariable int assignment_id, @AuthenticationPrincipal OAuth2User principal) {
-		
-		// Assignment object 
-		Assignment assignment = assignmentRepository.findById(assignment_id).orElse(null);
-		
-		// check for assignment_id
-		if(null == assignment) {
-			throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "AssignmentId not found." );
-		}	
-		// get course from id
-		Course c = assignment.getCourse();
-		if(c == null) {
-			throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "course_id not found." );
-		}
-		// check that this request is from the course instructor 
-		String instructor_email = principal.getAttribute("email");
-		if (!c.getInstructor().equals(instructor_email)) {
-			throw new ResponseStatusException( HttpStatus.UNAUTHORIZED, "Not Authorized." );
-		}
-		
-		// check that assignment has no grades 
-		//(might need a getter for assignment grades list size in assignment class but using pre-coded methods for now)
-		if(assignment.getNeedsGrading() == 1) {
-			throw new ResponseStatusException( HttpStatus.BAD_REQUEST, "Assignments with grades cannot be deleted. " );
-		}
-		
-		assignmentRepository.delete(assignment);
-		
-	}
+
 }
-
-
