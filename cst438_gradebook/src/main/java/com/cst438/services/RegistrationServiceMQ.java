@@ -1,6 +1,7 @@
 package com.cst438.services;
 
 
+import com.cst438.controllers.EnrollmentController;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -36,24 +37,23 @@ public class RegistrationServiceMQ extends RegistrationService {
 	Queue registrationQueue;
 
 
-	// ----- end of configuration of message queue
 
-	// receiver of messages from Registration service
-	
-	@RabbitListener(queues = "gradebook-queue")
-	@Transactional
-	public void receive(EnrollmentDTO enrollmentDTO) {
-		
-		//TODO  complete this method in homework 4
-		
-	}
+    // ----- end of configuration of message queue
 
-	// sender of messages to Registration Service
-	@Override
-	public void sendFinalGrades(int course_id, CourseDTOG courseDTO) {
-		 
-		//TODO  complete this method in homework 4
-		
-	}
+    // receiver of messages from Registration service
+
+    @RabbitListener(queues = "gradebook-queue")
+    @Transactional
+    public void receive(EnrollmentDTO enrollmentDTO) {
+        System.out.println("received MQ enrollment " + enrollmentDTO.id);
+        enrollmentController.addEnrollment(enrollmentDTO);
+    }
+
+    // sender of messages to Registration Service
+    @Override
+    public void sendFinalGrades(int course_id, CourseDTOG courseDTO) {
+        System.out.println("sending final grades via MQ");
+        rabbitTemplate.convertAndSend(registrationQueue.getName(), courseDTO);
+    }
 
 }
