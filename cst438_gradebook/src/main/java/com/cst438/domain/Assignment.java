@@ -1,6 +1,7 @@
 package com.cst438.domain;
 
-import java.sql.Date;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.Entity;
@@ -13,22 +14,29 @@ import javax.persistence.OneToMany;
 
 @Entity
 public class Assignment {
-	
+
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
-	
+
 	@ManyToOne
 	@JoinColumn(name="course_id")
 	private Course course;
-	
+
 	@OneToMany(mappedBy="assignment")
 	private List<AssignmentGrade> assignmentGrades;
-	
+
 	private String name;
 	private Date dueDate;
 	private int needsGrading;  // 0 = false,  1= true (past due date and not all students have grades)
-	
+
+	public Assignment(){}
+	public Assignment(Course course, String name, Date dueDate, int needsGrading) {
+		this.name = name;
+		this.dueDate = dueDate;
+		this.needsGrading = needsGrading;
+		this.course = course;
+	}
 	public int getId() {
 		return id;
 	}
@@ -53,7 +61,13 @@ public class Assignment {
 	public void setNeedsGrading(int needsGrading) {
 		this.needsGrading = needsGrading;
 	}
-	
+	public void setAssignmentGrades(List<AssignmentGrade> gradesList) {
+		this.assignmentGrades = gradesList;
+	}
+	public ArrayList<AssignmentGrade> getAssignmentGrades() {
+		return new ArrayList<>(this.assignmentGrades);
+	}
+
 	public Course getCourse() {
 		return course;
 	}
@@ -65,5 +79,5 @@ public class Assignment {
 		return "Assignment [id=" + id + ", course_id=" + course.getCourse_id() + ", name=" + name + ", dueDate=" + dueDate
 				+ ", needsGrading=" + needsGrading + "]";
 	}
-	
+
 }

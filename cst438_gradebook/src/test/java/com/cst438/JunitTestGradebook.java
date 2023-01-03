@@ -36,7 +36,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.test.context.ContextConfiguration;
 
-/* 
+/*
  * Example of using Junit with Mockito for mock objects
  *  the database repositories are mocked with test data.
  *  
@@ -115,7 +115,7 @@ public class JunitTestGradebook {
 		ag.setStudentEnrollment(enrollment);
 
 		// given -- stubs for database repositories that return test data
-		given(assignmentRepository.findById(1)).willReturn(Optional.of(assignment));
+		given(assignmentRepository.findById(1)).willReturn(assignment);
 		given(assignmentGradeRepository.findByAssignmentIdAndStudentEmail(1, TEST_STUDENT_EMAIL)).willReturn(null);
 		given(assignmentGradeRepository.save(any())).willReturn(ag);
 
@@ -143,7 +143,7 @@ public class JunitTestGradebook {
 		// change grade to score = 80
 		result.grades.get(0).grade = "80";
 
-		given(assignmentGradeRepository.findById(1)).willReturn(Optional.of(ag));
+		given(assignmentGradeRepository.findById(1)).willReturn(ag);
 
 		// send updates to server
 		response = mvc
@@ -200,9 +200,9 @@ public class JunitTestGradebook {
 		ag.setStudentEnrollment(enrollment);
 
 		// given -- stubs for database repositories that return test data
-		given(assignmentRepository.findById(1)).willReturn(Optional.of(assignment));
+		given(assignmentRepository.findById(1)).willReturn(assignment);
 		given(assignmentGradeRepository.findByAssignmentIdAndStudentEmail(1, TEST_STUDENT_EMAIL)).willReturn(ag);
-		given(assignmentGradeRepository.findById(1)).willReturn(Optional.of(ag));
+		given(assignmentGradeRepository.findById(1)).willReturn(ag);
 
 		// end of mock data
 
@@ -262,35 +262,8 @@ public class JunitTestGradebook {
 			throw new RuntimeException(e);
 		}
 	}
-	@Test
-	public void createAssignment() throws Exception {
-        MockHttpServletResponse response;
 
-        Course course = new Course();
-        course.setCourse_id(TEST_COURSE_ID);
-        course.setSemester(TEST_SEMESTER);
-        course.setYear(TEST_YEAR);
-        course.setInstructor(TEST_INSTRUCTOR_EMAIL);
-        course.setEnrollments(new java.util.ArrayList<Enrollment>());
-        course.setAssignments(new java.util.ArrayList<Assignment>());
-
-        Enrollment enrollment = new Enrollment();
-        enrollment.setCourse(course);
-        course.getEnrollments().add(enrollment);
-        enrollment.setId(TEST_COURSE_ID);
-        enrollment.setStudentEmail(TEST_STUDENT_EMAIL);
-        enrollment.setStudentName(TEST_STUDENT_NAME);
-
-        given(courseRepository.findById(TEST_COURSE_ID)).willReturn(course);
-        AssignmentListDTO.AssignmentDTO request = new AssignmentListDTO.AssignmentDTO(1, course.getCourse_id(), "new name 123", "2021-09-01T23:37:22.824Z", course.getTitle());
-
-        response = mvc.perform(MockMvcRequestBuilders.post("/course/" + course.getCourse_id() + "/assignment").accept(MediaType.APPLICATION_JSON).content(asJsonString(request)).contentType(MediaType.APPLICATION_JSON)).andReturn().getResponse();
-
-        assertEquals("true", response.getContentAsString());
-        verify(assignmentRepository, times(1)).save(any());
-    }
-	
-	@Test
+    @Test
     public void updateAssignmentName() throws Exception {
         MockHttpServletResponse response;
 
@@ -333,7 +306,36 @@ public class JunitTestGradebook {
         assertEquals("new name", objResponse.assignmentName);
         assertEquals(200, response.getStatus());
     }
-	@Test
+
+    @Test
+    public void createAssignment() throws Exception {
+        MockHttpServletResponse response;
+
+        Course course = new Course();
+        course.setCourse_id(TEST_COURSE_ID);
+        course.setSemester(TEST_SEMESTER);
+        course.setYear(TEST_YEAR);
+        course.setInstructor(TEST_INSTRUCTOR_EMAIL);
+        course.setEnrollments(new java.util.ArrayList<Enrollment>());
+        course.setAssignments(new java.util.ArrayList<Assignment>());
+
+        Enrollment enrollment = new Enrollment();
+        enrollment.setCourse(course);
+        course.getEnrollments().add(enrollment);
+        enrollment.setId(TEST_COURSE_ID);
+        enrollment.setStudentEmail(TEST_STUDENT_EMAIL);
+        enrollment.setStudentName(TEST_STUDENT_NAME);
+
+        given(courseRepository.findByCourse_id(TEST_COURSE_ID)).willReturn(course);
+        AssignmentListDTO.AssignmentDTO request = new AssignmentListDTO.AssignmentDTO(1, course.getCourse_id(), "new name 123", "2021-09-01T23:37:22.824Z", course.getTitle());
+
+        response = mvc.perform(MockMvcRequestBuilders.post("/course/" + course.getCourse_id() + "/assignment").accept(MediaType.APPLICATION_JSON).content(asJsonString(request)).contentType(MediaType.APPLICATION_JSON)).andReturn().getResponse();
+
+        assertEquals("true", response.getContentAsString());
+        verify(assignmentRepository, times(1)).save(any());
+    }
+
+    @Test
     public void deleteAssignment() throws Exception {
         MockHttpServletResponse response;
 
@@ -369,12 +371,16 @@ public class JunitTestGradebook {
 
         ArrayList<AssignmentGrade> list = new ArrayList<>();
         list.add(ag);
+        assignment.setAssignmentGrades(list);
 
         given(assignmentRepository.findById(assignment.getId())).willReturn(assignment);
 
+        // given the assignment has grades it will fail to delete and return false
         response = mvc.perform(MockMvcRequestBuilders.delete("/course/" + course.getCourse_id() + "/assignment/" + assignment.getId()).accept(MediaType.APPLICATION_JSON)).andReturn().getResponse();
         assertEquals("false", response.getContentAsString());
 
+        // given the assignment has no grades it will delete and return true
+        assignment.setAssignmentGrades(new ArrayList<AssignmentGrade>());
         response = mvc.perform(MockMvcRequestBuilders.delete("/course/" + course.getCourse_id() + "/assignment/" + assignment.getId()).accept(MediaType.APPLICATION_JSON)).andReturn().getResponse();
         assertEquals("true", response.getContentAsString());
         verify(assignmentRepository, times(1)).delete(assignment);
